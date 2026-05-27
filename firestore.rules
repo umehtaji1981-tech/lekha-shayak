@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Catch-all deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helpers
+    function isSignedIn() { 
+      return request.auth != null; 
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isVerified() {
+      return isSignedIn() && (
+        request.auth.token.email_verified == true || 
+        request.auth.token.firebase.sign_in_provider == 'google.com'
+      );
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email != null && request.auth.token.email.lower() == 'umehtaji1981@gmail.com') ||
+        (request.auth.token.get('email', '').lower() == 'umehtaji1981@gmail.com') ||
+        (request.auth.token.email != null && request.auth.token.email.lower() == 'smehtaji1950@gmail.com') ||
+        (request.auth.token.get('email', '').lower() == 'smehtaji1950@gmail.com') ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('globalRole', '') == 'SuperAdmin')
+      );
+    }
+
+    function hasCompanyAccess(companyId) {
+      return isSignedIn() && (
+        isAdmin() ||
+        (exists(/databases/$(database)/documents/companies/$(companyId)) && 
+         get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         companyId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('companyIds', []))
+      );
+    }
+    
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+
+    // Companies Collection
+    match /companies/{companyId} {
+      allow read: if isSignedIn() && (
+        isAdmin() || 
+        (resource != null && resource.data.ownerId == request.auth.uid) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         companyId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('companyIds', []))
+      );
+      
+      allow create: if isSignedIn();
+      allow update: if hasCompanyAccess(companyId);
+      allow delete: if isAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)) && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
+      
+      // Recursive rule for ALL sub-collections
+      match /{allSubData=**} {
+        allow read, write: if hasCompanyAccess(companyId);
+      }
+    }
+  }
+}

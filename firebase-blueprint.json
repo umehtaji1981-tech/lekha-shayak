@@ -1,0 +1,181 @@
+{
+  "entities": {
+    "Company": {
+      "title": "Company",
+      "description": "Represents an accounting entity/business.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "gstIn": { "type": "string" },
+        "address": { "type": "string" },
+        "state": { "type": "string" },
+        "pan": { "type": "string" },
+        "registrationType": { "type": "string", "enum": ["Regular", "Composition", "Unregistered"] },
+        "pinCode": { "type": "string" },
+        "filingFrequency": { "type": "string", "enum": ["Monthly", "QRMP"] },
+        "logo": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "gstIn", "ownerId"]
+    },
+    "User": {
+      "title": "User Profile",
+      "description": "Extended user data and permissions.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["Admin", "Sales", "Accountant"] },
+        "companyIds": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["uid", "role"]
+    },
+    "Ledger": {
+      "title": "Accounting Ledger",
+      "description": "Chart of accounts entry.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "group": { "type": "string", "enum": ["Bank Accounts", "Cash-in-hand", "Sales Accounts", "Purchase Accounts", "Sundry Debtors", "Sundry Creditors", "Direct Expenses", "Indirect Expenses", "Direct Incomes", "Indirect Incomes", "Fixed Assets", "Current Assets", "Current Liabilities", "Loans & Advances (Asset)", "Loans (Liability)", "Capital Account", "Investments", "Duties & Taxes"] },
+        "openingBalance": { "type": "number" },
+        "currentBalance": { "type": "number" },
+        "registrationType": { "type": "string", "enum": ["Regular", "Composition", "Unregistered"] },
+        "gstIn": { "type": "string" },
+        "state": { "type": "string" },
+        "stateCode": { "type": "string" },
+        "companyId": { "type": "string" }
+      },
+      "required": ["name", "group", "companyId"]
+    },
+    "Item": {
+      "title": "Inventory Item",
+      "description": "Goods or services tracked in inventory.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "hsn": { "type": "string" },
+        "sku": { "type": "string" },
+        "unit": { "type": "string" },
+        "gstRate": { "type": "number" },
+        "salesPrice": { "type": "number" },
+        "purchasePrice": { "type": "number" },
+        "stockLevel": { "type": "number" },
+        "isService": { "type": "boolean" },
+        "companyId": { "type": "string" }
+      },
+      "required": ["name", "companyId"]
+    },
+    "Transaction": {
+      "title": "Accounting Voucher",
+      "description": "Sales, Purchases, Payments, etc.",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "type": { "type": "string", "enum": ["Sales", "Purchase", "Payment", "Receipt", "Journal"] },
+        "voucherNumber": { "type": "string" },
+        "partyId": { "type": "string" },
+        "partyName": { "type": "string" },
+        "items": { 
+          "type": "array", 
+          "items": { 
+            "type": "object",
+            "properties": {
+              "itemId": { "type": "string" },
+              "name": { "type": "string" },
+              "qty": { "type": "number" },
+              "rate": { "type": "number" },
+              "amount": { "type": "number" },
+              "gstRate": { "type": "number" },
+              "hsn": { "type": "string" }
+            }
+          }
+        },
+        "subTotal": { "type": "number" },
+        "cgst": { "type": "number" },
+        "sgst": { "type": "number" },
+        "igst": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "roundOff": { "type": "number" },
+        "narration": { "type": "string" },
+        "companyId": { "type": "string" },
+        "reverseCharge": { "type": "boolean" },
+        "itcEligible": { "type": "boolean" }
+      },
+      "required": ["date", "type", "companyId"]
+    },
+    "Unit": {
+      "title": "Unit of Measure",
+      "description": "Measurement units for items.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "symbol": { "type": "string" },
+        "companyId": { "type": "string" }
+      },
+      "required": ["name", "symbol", "companyId"]
+    },
+    "Sequence": {
+      "title": "Sequence Counter",
+      "description": "Auto-increment counters for vouchers.",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["Sales", "Purchase", "Payment", "Receipt", "Journal"] },
+        "prefix": { "type": "string" },
+        "suffix": { "type": "string" },
+        "lastNumber": { "type": "number" },
+        "padding": { "type": "number" },
+        "companyId": { "type": "string" },
+        "fy": { "type": "string" }
+      },
+      "required": ["type", "lastNumber", "companyId", "fy"]
+    },
+    "ActivityLog": {
+      "title": "Activity Log",
+      "description": "Audit trail for company actions.",
+      "type": "object",
+      "properties": {
+        "action": { "type": "string", "enum": ["CREATE", "UPDATE", "DELETE"] },
+        "details": { "type": "string" },
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["action", "details", "userId", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/companies/{companyId}": {
+      "schema": "Company",
+      "description": "Business entities"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile and access control"
+    },
+    "/companies/{companyId}/ledgers/{ledgerId}": {
+      "schema": "Ledger",
+      "description": "Ledgers for a specific company"
+    },
+    "/companies/{companyId}/items/{itemId}": {
+      "schema": "Item",
+      "description": "Inventory items for a specific company"
+    },
+    "/companies/{companyId}/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "All accounting vouchers"
+    },
+    "/companies/{companyId}/units/{unitId}": {
+      "schema": "Unit",
+      "description": "Measurement units"
+    },
+    "/companies/{companyId}/sequences/{sequenceId}": {
+      "schema": "Sequence",
+      "description": "Voucher number sequences"
+    },
+    "/companies/{companyId}/activity_logs/{logId}": {
+      "schema": "ActivityLog",
+      "description": "Company activity logs"
+    }
+  }
+}

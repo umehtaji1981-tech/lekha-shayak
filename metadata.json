@@ -1,0 +1,6 @@
+{
+  "name": "Lekha Sahayak: Indian Accounting & GST",
+  "description": "Comprehensive Indian ERP for Accounting and GST compliance with AI-powered bill processing, inventory management, and multi-company support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
